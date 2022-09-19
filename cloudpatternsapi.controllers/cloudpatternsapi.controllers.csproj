@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="11.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\cloudpatternsapi.dto\cloudpatternsapi.dto.csproj" />
+    <ProjectReference Include="..\cloudpatternsapi.implementation\cloudpatternsapi.implementation.csproj" />
+    <ProjectReference Include="..\cloudpatternsapi.interfaces\cloudpatternsapi.interfaces.csproj" />
+    <ProjectReference Include="..\cloudpatternsapi.models\cloudpatternsapi.models.csproj" />
+  </ItemGroup>
+
+</Project>

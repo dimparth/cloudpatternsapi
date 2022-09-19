@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\cloudpatternsapi.dto\cloudpatternsapi.dto.csproj" />
+    <ProjectReference Include="..\cloudpatternsapi.models\cloudpatternsapi.models.csproj" />
+    <ProjectReference Include="..\PagedListForEFCore\PagedListForEFCore.csproj" />
+  </ItemGroup>
+
+</Project>

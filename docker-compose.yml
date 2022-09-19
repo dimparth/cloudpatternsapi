@@ -1,0 +1,11 @@
+version: '3.4'
+
+services:
+  cloudpatternsapi:
+    image: ${DOCKER_REGISTRY-}cloudpatternsapi
+    build:
+      context: .
+      dockerfile: cloudpatternsapi/Dockerfile
+
+  db:
+    image: "mcr.microsoft.com/mssql/server:2017-latest"
