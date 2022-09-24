@@ -10,5 +10,6 @@ namespace cloudpatternsapi.interfaces.services
     {
         Task<string> DatabaseHealthCheck();
         Task<string> ApiHealthCheck();
+        Task<string> DiskSizeCheck();
     }
 }

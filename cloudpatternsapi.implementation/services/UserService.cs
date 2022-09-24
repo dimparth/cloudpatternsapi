@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using PagedListForEFCore;
 using Polly;
 using Polly.CircuitBreaker;
+using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
 using System;
 using System.Collections.Generic;
@@ -27,8 +28,8 @@ namespace cloudpatternsapi.implementation
         {
             _userRepository = userRepository;
             _mapper = mapper;
-            _retryPolicy = Policy.Handle<Exception>().RetryForeverAsync();
-            _circuitBreakerPolicy = Policy.Handle<Exception>(result => string.IsNullOrEmpty(result.Message)).CircuitBreakerAsync(2, TimeSpan.FromSeconds(1));
+            _retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1),3));
+            _circuitBreakerPolicy = Policy.Handle<Exception>(result => string.IsNullOrEmpty(result.Message)).CircuitBreakerAsync(1, TimeSpan.FromSeconds(3));
             _memoryCache = memoryCache;
         }
 

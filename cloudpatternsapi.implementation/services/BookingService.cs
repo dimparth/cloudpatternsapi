@@ -5,6 +5,7 @@ using cloudpatternsapi.models;
 using Microsoft.AspNetCore.Http;
 using Polly;
 using Polly.CircuitBreaker;
+using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
 using System;
 using System.Collections.Generic;
@@ -32,7 +33,7 @@ namespace cloudpatternsapi.implementation.services
             _userRepository = userRepository;
             _emailService = emailService;
             _mapper = mapper;
-            _retryPolicy = Policy.Handle<Exception>().RetryForeverAsync();
+            _retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 3));
             _circuitBreakerPolicy = Policy.Handle<Exception>(result => string.IsNullOrEmpty(result.Message)).CircuitBreakerAsync(2, TimeSpan.FromSeconds(1));
         }
         public async Task<BookingDto> CreateBooking(CreateBookingDto createBookingDto, int userId)

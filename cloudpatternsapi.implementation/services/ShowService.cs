@@ -33,7 +33,7 @@ namespace cloudpatternsapi.implementation.services
             _hallRepository = hallRepository;
             _bookingRepository = bookingRepository;
             _mapper = mapper;
-            _retryPolicy = Policy.Handle<Exception>().RetryForeverAsync();
+            _retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 3));
             _circuitBreakerPolicy = Policy.Handle<Exception>(result => string.IsNullOrEmpty(result.Message)).CircuitBreakerAsync(2, TimeSpan.FromSeconds(1));
             _memoryCache = memoryCache;
             _cacheService = cacheService;

@@ -24,14 +24,13 @@ try
     logger.Info($"Web Api Started");
     var builder = WebApplication.CreateBuilder(args);
     var connectionString = builder.Configuration.GetSection("ConnectionStrings");
-    var conns = builder.Configuration.GetConnectionString("DockerConnection");
+    var conns = builder.Configuration.GetConnectionString("DefaultConnection");
     var cacheConfig = builder.Configuration.GetSection("Caching").GetChildren()
         .ToDictionary(child => child.Key, child => TimeSpan.Parse(child.Value));
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
     builder.Services.AddServices(conns,cacheConfig);
     builder.Services.AddIdentityServices(builder.Configuration);
-    // Add services to the container.
     builder.Services.AddControllers()
                 .AddNewtonsoftJson()
                 .AddApplicationPart(typeof(AccountController).Assembly)
@@ -88,6 +87,6 @@ catch (Exception exception)
 }
 finally
 {
-    // Ensure to flush and stop internal timers/threads before application-exit (Avoid segmentation fault on Linux)
+    // Ensure to flush and stop internal timers/threads before application-exit
     NLog.LogManager.Shutdown();
 }

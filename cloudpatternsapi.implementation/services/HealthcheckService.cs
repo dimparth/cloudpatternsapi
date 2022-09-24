@@ -37,5 +37,25 @@ namespace cloudpatternsapi.implementation.services
             var result = await _userRepository.HealthCheck();
             return result;
         }
+        public async Task<string> DiskSizeCheck()
+        {
+            DriveInfo[] allDrives = DriveInfo.GetDrives();
+            var stringBuilder = new StringBuilder();
+            var result = await Task.Run(() => {
+                foreach (DriveInfo drive in allDrives)
+                {
+                    stringBuilder.Append($"Drive {drive.Name}. ");
+                    stringBuilder.Append($"Drive type:  {drive.DriveType}. ");
+                    if (drive.IsReady == true)
+                    {
+                        stringBuilder.Append($"Available space: {drive.AvailableFreeSpace} bytes. ");
+                        stringBuilder.Append($"Total available space: {drive.TotalFreeSpace} bytes. ");
+                        stringBuilder.Append($"Total size of drive: {drive.TotalSize} bytes. ");
+                    }
+                }
+                return stringBuilder.ToString();
+            });
+            return result.ToString();
+        }
     }
 }

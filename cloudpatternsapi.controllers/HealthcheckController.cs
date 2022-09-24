@@ -18,7 +18,7 @@ namespace cloudpatternsapi.controllers
         {
             _healthCheckService = healthCheckService;
         }
-        [HttpGet("/db")]
+        [HttpGet("db")]
         public async Task<ActionResult> DatabaseHealthCheck()
         {
             var response = await _healthCheckService.DatabaseHealthCheck();
@@ -28,6 +28,12 @@ namespace cloudpatternsapi.controllers
         public async Task<ActionResult> ApiHealthCheck()
         {
             var response = await _healthCheckService.ApiHealthCheck();
+            return Ok(response);
+        }
+        [HttpGet("disk")]
+        public async Task<ActionResult> DiskCheck()
+        {
+            var response = await _healthCheckService.DiskSizeCheck();
             return Ok(response);
         }
     }

@@ -22,8 +22,6 @@ namespace cloudpatternsapi.implementation.services
         private readonly SignInManager<AppUser> _signInManager;
         private readonly ITokenService _tokenService;
         private readonly IMapper _mapper;
-        private readonly AsyncRetryPolicy _retryPolicy;
-        private readonly AsyncCircuitBreakerPolicy _circuitBreakerPolicy;
 
         public AccountService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IMapper mapper)
         {
@@ -31,8 +29,6 @@ namespace cloudpatternsapi.implementation.services
             _signInManager = signInManager;
             _tokenService = tokenService;
             _mapper = mapper;
-            _retryPolicy = Policy.Handle<Exception>().RetryForeverAsync();
-            _circuitBreakerPolicy = Policy.Handle<Exception>(result => string.IsNullOrEmpty(result.Message)).CircuitBreakerAsync(2, TimeSpan.FromSeconds(1));
         }
 
         public async Task<UserDto> RegisterNewUser(RegisterDto registerDto)
