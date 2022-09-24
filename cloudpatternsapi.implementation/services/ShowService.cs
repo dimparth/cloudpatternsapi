@@ -7,6 +7,7 @@ using Microsoft.Extensions.Caching.Memory;
 using PagedListForEFCore;
 using Polly;
 using Polly.CircuitBreaker;
+using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
 using System;
 using System.Collections.Generic;
@@ -24,10 +25,9 @@ namespace cloudpatternsapi.implementation.services
         private readonly IMapper _mapper;
         private readonly AsyncRetryPolicy _retryPolicy;
         private readonly AsyncCircuitBreakerPolicy _circuitBreakerPolicy;
-        private readonly IMemoryCache _memoryCache;
         private readonly ICacheService _cacheService;
 
-        public ShowService(IShowRepository showRepository, IHallRepository hallRepository, IBookingRepository bookingRepository, IMapper mapper, IMemoryCache memoryCache, ICacheService cacheService)
+        public ShowService(IShowRepository showRepository, IHallRepository hallRepository, IBookingRepository bookingRepository, IMapper mapper, ICacheService cacheService)
         {
             _showRepository = showRepository;
             _hallRepository = hallRepository;
@@ -35,7 +35,6 @@ namespace cloudpatternsapi.implementation.services
             _mapper = mapper;
             _retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 3));
             _circuitBreakerPolicy = Policy.Handle<Exception>(result => string.IsNullOrEmpty(result.Message)).CircuitBreakerAsync(2, TimeSpan.FromSeconds(1));
-            _memoryCache = memoryCache;
             _cacheService = cacheService;
         }
 
