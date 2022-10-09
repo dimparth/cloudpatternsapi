@@ -3,14 +3,17 @@ using cloudpatternsapi.dto;
 using cloudpatternsapi.interfaces;
 using cloudpatternsapi.models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Retry;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace cloudpatternsapi.implementation.services
@@ -22,19 +25,26 @@ namespace cloudpatternsapi.implementation.services
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
+        private readonly ILogger<BookingService> _logger;
         private readonly string _appDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Resources");
-        private readonly AsyncRetryPolicy _retryPolicy;
-        private readonly AsyncCircuitBreakerPolicy _circuitBreakerPolicy;
+        private static readonly AsyncRetryPolicy RetryPolicy = Policy.Handle<ArgumentException>().Or<Microsoft.Data.SqlClient.SqlException>()
+            .WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 3), onRetry: (exception, delay, context) =>
+            {
+                Debug.WriteLine($"{"Retry",-10}{delay,-10:ss\\.fff}: {exception.GetType().Name}");
+            });
+        private static readonly AsyncCircuitBreakerPolicy CircuitBreakerPolicy = Policy.Handle<ArgumentException>().CircuitBreakerAsync(1, TimeSpan.FromMinutes(1),
+            onBreak: (ex, @break) => Debug.WriteLine($"{"Break",-10}{@break,-10:ss\\.fff}: {ex.GetType().Name}"),
+            onReset: () => Debug.WriteLine($"{"Reset",-10}"),
+            onHalfOpen: () => Debug.WriteLine($"{"HalfOpen",-10}"));
 
-        public BookingService(IShowRepository showRepository, IBookingRepository bookingRepository, IUserRepository userRepository, IEmailService emailService, IMapper mapper)
+        public BookingService(IShowRepository showRepository, IBookingRepository bookingRepository, IUserRepository userRepository, IEmailService emailService, IMapper mapper, ILogger<BookingService> logger)
         {
             _showRepository = showRepository;
             _bookingRepository = bookingRepository;
             _userRepository = userRepository;
             _emailService = emailService;
             _mapper = mapper;
-            _retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 3));
-            _circuitBreakerPolicy = Policy.Handle<Exception>(result => string.IsNullOrEmpty(result.Message)).CircuitBreakerAsync(2, TimeSpan.FromSeconds(1));
+            _logger = logger;
         }
         public async Task<BookingDto> CreateBooking(CreateBookingDto createBookingDto, int userId)
         {
@@ -81,17 +91,20 @@ namespace cloudpatternsapi.implementation.services
             string dateOfShow = booking.DateOfShow.ToString();
             string timeOfShow = show.TimeStart.ToString();
             _emailService.SendEmail("Στοιχεία Κράτησης", user?.Email, user?.CreateEmailText(show.Title!, dateOfShow, timeOfShow, String.Join("-", booking.Seats!.Select(seat => seat.SeatNumber))));
-            return _mapper.Map<BookingDto>(booking);
+            var response = _mapper.Map<BookingDto>(booking);
+            _logger.LogInformation(JsonSerializer.Serialize(response));
+            return response;
         }
         public async Task<IList<BookingDto>> GetBookingsForLoggedUser(int userId)
         {
-            var response = await _circuitBreakerPolicy.ExecuteAsync(() => _retryPolicy.ExecuteAsync(async () =>
+            var response = await CircuitBreakerPolicy.ExecuteAsync(() => RetryPolicy.ExecuteAsync(async () =>
             {
 
                 var user = await _userRepository.GetUserByIdAsync(userId);
                 var bookings = await _bookingRepository.GetBookingsForUserAync(user);
                 return _mapper.Map<List<BookingDto>>(bookings);
             }));
+            _logger.LogInformation(JsonSerializer.Serialize(response));
             return response;
             /*var user = await _userRepository.GetUserByIdAsync(userId);
             var bookings = await _bookingRepository.GetBookingsForUserAync(user);
@@ -99,12 +112,13 @@ namespace cloudpatternsapi.implementation.services
         }
         public async Task<IList<BookingDto>> GetBookingsForShowAndDate(int showId, DateTime showDate)
         {
-            var response = await _circuitBreakerPolicy.ExecuteAsync(() => _retryPolicy.ExecuteAsync(async () =>
+            var response = await CircuitBreakerPolicy.ExecuteAsync(() => RetryPolicy.ExecuteAsync(async () =>
             {
                 var bookings = await _bookingRepository.GetBookingsForShowAndDate(showId, showDate);
 
                 return _mapper.Map<List<BookingDto>>(bookings);
             }));
+            _logger.LogInformation(JsonSerializer.Serialize(response));
             return response;
             /*var bookings = await _bookingRepository.GetBookingsForShowAndDate(showId, showDate);
 
@@ -112,7 +126,7 @@ namespace cloudpatternsapi.implementation.services
         }
         public async Task<IList<BookingDto>> GetBookingForUserByEmail(FileDto model)
         {
-            var response = await _circuitBreakerPolicy.ExecuteAsync(() => _retryPolicy.ExecuteAsync(async () =>
+            var response = await CircuitBreakerPolicy.ExecuteAsync(() => RetryPolicy.ExecuteAsync(async () =>
             {
                 var user = await _userRepository.GetUserByEmailAsync(model.EmailAddress);
 
@@ -121,6 +135,7 @@ namespace cloudpatternsapi.implementation.services
                 var result = await SaveFileAsync(model.MyFile);
                 return _mapper.Map<List<BookingDto>>(bookings);
             }));
+            _logger.LogInformation(JsonSerializer.Serialize(response));
             return response;
            /* var user = await _userRepository.GetUserByEmailAsync(model.EmailAddress);
 
@@ -133,6 +148,7 @@ namespace cloudpatternsapi.implementation.services
         {
             await _bookingRepository.SetAppearForBooking(id);
             var result = await _bookingRepository.Complete();
+            _logger.LogInformation(JsonSerializer.Serialize(result));
             return result;
         }
         public async Task<bool> SaveFileAsync(IFormFile? file)
@@ -149,8 +165,10 @@ namespace cloudpatternsapi.implementation.services
                 {
                     await file.CopyToAsync(stream);
                 }
+                _logger.LogInformation(JsonSerializer.Serialize(true));
                 return true;
             }
+            _logger.LogInformation(JsonSerializer.Serialize(false));
             return false;
         }
     }

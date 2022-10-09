@@ -1,6 +1,7 @@
 ﻿using cloudpatternsapi.dto;
 using cloudpatternsapi.models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,12 +9,33 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace cloudpatternsapi.implementation
 {
     public static class Extensions
     {
+        public static void IsTransientError()
+        {
+            var random = new Random();
+            var errorNo = random.Next(0, 4);
+            if (errorNo == 0)
+            {
+                SqlConnection conn = new(@"Data Source=.;Database=GUARANTEED_TO_FAIL;Connection Timeout=1");
+                conn.Open();
+            }
+        }
+        public static bool ValidateUserInput(this string? userInput)
+        {
+            if (string.IsNullOrEmpty(userInput))
+            {
+                return false;
+            }
+            Regex regex = new(@"^[A-Za-z0-9@._]+$");
+            var isMatch = regex.IsMatch(userInput);
+            return isMatch;
+        }
         public static void AddPaginationHeader(this HttpResponse response, int currentPage, int itemsPerPage, int totalItems, int totalPages)
         {
             var paginationHeader = new PaginationHelper(currentPage, itemsPerPage, totalItems, totalPages);
@@ -71,15 +93,5 @@ namespace cloudpatternsapi.implementation
                 " ολοκληρώθηκε με επιτυχία. Οι θέσεις σας είναι " + seats + ". Παρακαλω΄να είστε στον χώρο του θεάτρου τουλάχιστον μισή ώρα πριν.\n\n" +
                 "Ευχαριστούμε για την προτίμηση και την εμπιστοσύνη.\n\nΜε εκτίμηση,\n\nΗ ομάδα του ShowBooking";
         }
-        /*public static PagedListHeaders ToHeader(this PagedList<T> users)
-        {
-            return new PagedListHeaders
-            {
-                CurrentPage = users.CurrentPage,
-                PageSize = users.PageSize,
-                TotalCount = users.TotalCount,
-                TotalPages = users.TotalPages
-            };
-        }*/
     }
 }

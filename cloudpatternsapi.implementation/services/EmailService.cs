@@ -1,4 +1,5 @@
 ﻿using cloudpatternsapi.interfaces;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Security;
@@ -8,9 +9,10 @@ namespace cloudpatternsapi.implementation
 {
     public class EmailService : IEmailService
     {
-        public EmailService()
+        private readonly ILogger<EmailService> _logger;
+        public EmailService(ILogger<EmailService> logger)
         {
-
+            _logger = logger;
         }
         public void SendEmail(string subject, string? recipient, string? messageBody)
         {
@@ -37,6 +39,7 @@ namespace cloudpatternsapi.implementation
 
                 RemoteCertificateValidationCallback value = delegate (object s, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; }!;
                 ServicePointManager.ServerCertificateValidationCallback = value;
+                _logger.LogInformation($"Sent email to {recipient} with body {messageBody}");
                 smtp.Send(message);
             }
             catch (Exception ex)
