@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: cloudpatternsapi/Dockerfile
+    ports:
+      - 7266:443
 
   db:
     image: "mcr.microsoft.com/mssql/server:2017-latest"

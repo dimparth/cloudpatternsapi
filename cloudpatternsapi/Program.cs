@@ -15,7 +15,7 @@ try
     logger.Info($"Web Api Started");
     var builder = WebApplication.CreateBuilder(args);
     var connectionString = builder.Configuration.GetSection("ConnectionStrings");
-    var conns = builder.Configuration.GetConnectionString("DefaultConnection");
+    var conns = builder.Configuration.GetConnectionString("DockerConnection");
     var cacheConfig = builder.Configuration.GetSection("Caching").GetChildren()
         .ToDictionary(child => child.Key, child => TimeSpan.Parse(child.Value));
     builder.Services.AddEndpointsApiExplorer();
